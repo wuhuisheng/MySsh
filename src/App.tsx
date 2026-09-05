@@ -47,6 +47,7 @@ export default function App() {
   const [previewPath, setPreviewPath] = useState<string | null>(null);
   const [editorPath, setEditorPath] = useState<string | null>(null);
   const [sftpRefreshNonce, setSftpRefreshNonce] = useState(0);
+  const [searchNonce, setSearchNonce] = useState(0);
 
   const [sftpWidth, setSftpWidth] = useState(480);
   const [dropActive, setDropActive] = useState(false);
@@ -464,6 +465,13 @@ export default function App() {
               ＋ 终端
             </button>
             <button
+              className="btn"
+              onClick={() => setSearchNonce((n) => n + 1)}
+              title="在当前终端中搜索（Ctrl/Cmd+F）"
+            >
+              🔍 搜索
+            </button>
+            <button
               className={"btn" + (activeCount ? " btn-accent" : "")}
               onClick={() => setTransfersOpen((v) => !v)}
             >
@@ -518,6 +526,7 @@ export default function App() {
                     pendingOutput.current.delete(ch);
                     return arr;
                   }}
+                  searchRequest={searchNonce}
                 />
               ))}
               {tabs.length === 0 && (

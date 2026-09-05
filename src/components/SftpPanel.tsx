@@ -57,6 +57,7 @@ export default function SftpPanel({
   const [confirmDelete, setConfirmDelete] = useState<string[] | null>(null);
   const anchor = useRef<number | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     onCwdChange(cwd);
@@ -182,10 +183,17 @@ export default function SftpPanel({
     }
   };
 
-  // close the context menu on any click / Escape
+  // close the context menu on clicks OUTSIDE of it (presses inside must
+  // reach the item's onClick, so a blanket mousedown listener would unmount
+  // the menu before the click lands and every item would appear dead)
   useEffect(() => {
     if (!menu) return;
-    const close = () => setMenu(null);
+    const close = (e: MouseEvent) => {
+      if (menuRef.current && e.target instanceof Node && menuRef.current.contains(e.target)) {
+        return;
+      }
+      setMenu(null);
+    };
     const esc = (e: KeyboardEvent) => e.key === "Escape" && setMenu(null);
     window.addEventListener("mousedown", close);
     window.addEventListener("keydown", esc);
@@ -367,6 +375,7 @@ export default function SftpPanel({
 
       {menu && (
         <div
+          ref={menuRef}
           className="ctx-menu"
           style={{ left: Math.min(menu.x, window.innerWidth - 190), top: menu.y }}
         >

@@ -15,6 +15,8 @@ interface Props {
   registerWriter: (fn: (data: Uint8Array) => void) => () => void;
   /** output that arrived before this component mounted, keyed to our channel */
   drainPending: (channelId: number) => Uint8Array[];
+  /** increments when the toolbar search button is pressed */
+  searchRequest: number;
 }
 
 export default function TerminalPanel({
@@ -24,6 +26,7 @@ export default function TerminalPanel({
   closed,
   registerWriter,
   drainPending,
+  searchRequest,
 }: Props) {
   const hostRef = useRef<HTMLDivElement>(null);
   const termRef = useRef<Terminal | null>(null);
@@ -166,6 +169,12 @@ export default function TerminalPanel({
     if (searchOpen) searchInputRef.current?.focus();
     else termRef.current?.focus();
   }, [searchOpen]);
+
+  // toolbar search button: only the visible tab reacts
+  useEffect(() => {
+    if (searchRequest > 0 && active) setSearchOpen(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchRequest]);
 
   const doSearch = (dir: "next" | "prev") => {
     if (!searchText || !searchRef.current) return;
