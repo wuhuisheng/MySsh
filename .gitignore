@@ -1,0 +1,14 @@
+# Node / frontend
+node_modules/
+dist/
+
+# Rust / Tauri
+src-tauri/target/
+src-tauri/gen/schemas/
+
+# System / editor
+.DS_Store
+*.log
+.idea/
+.zed/
+.zcode/
