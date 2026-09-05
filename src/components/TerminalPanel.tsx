@@ -115,14 +115,48 @@ export default function TerminalPanel({
     hostRef.current.addEventListener("mousedown", focusOnClick);
 
     return () => {
-      ro.disconnect();
-      hostRef.current?.removeEventListener("mousedown", focusOnClick);
-      dataSub.dispose();
-      search.dispose();
-      disposer();
-      term.dispose();
+      // dispose the WebGL renderer FIRST: xterm destroys addons in reverse
+      // registration order, and SearchAddon's dispose throws if the renderer
+      // is already gone. Everything is guarded so a failure here can never
+      // blank the whole app.
+      try {
+        syncWebGL(false);
+      } catch {
+        /* ignore */
+      }
+      try {
+        ro.disconnect();
+      } catch {
+        /* ignore */
+      }
+      try {
+        hostRef.current?.removeEventListener("mousedown", focusOnClick);
+      } catch {
+        /* ignore */
+      }
+      try {
+        dataSub.dispose();
+      } catch {
+        /* ignore */
+      }
+      try {
+        search.dispose();
+      } catch {
+        /* ignore */
+      }
+      try {
+        disposer();
+      } catch {
+        /* ignore */
+      }
+      try {
+        term.dispose();
+      } catch {
+        /* ignore */
+      }
       termRef.current = null;
       searchRef.current = null;
+      webglRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId, channelId]);
@@ -140,7 +174,11 @@ export default function TerminalPanel({
   };
 
   const closeSearch = () => {
-    searchRef.current?.clearDecorations();
+    try {
+      searchRef.current?.clearDecorations();
+    } catch {
+      /* ignore */
+    }
     setSearchOpen(false);
   };
 

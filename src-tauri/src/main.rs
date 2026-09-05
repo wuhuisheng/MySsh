@@ -411,6 +411,26 @@ fn read_pubkey_file(path: String) -> Result<deploy_key::LocalPubKey, String> {
 }
 
 fn main() {
+    // panic=abort kills the process instantly on any panic; persist the panic
+    // message so a black-screen report can be diagnosed after the fact
+    std::panic::set_hook(Box::new(|info| {
+        let msg = format!(
+            "[{}] MySsh panic: {}\nlocation: {:?}\n\n",
+            chrono::Local::now().format("%Y-%m-%d %H:%M:%S"),
+            info,
+            info.location(),
+        );
+        if let Ok(mut f) = std::fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(std::env::temp_dir().join("myssh-panic.log"))
+        {
+            use std::io::Write as _;
+            let _ = f.write_all(msg.as_bytes());
+        }
+        eprint!("{}", msg);
+    }));
+
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .setup(|_app| {
