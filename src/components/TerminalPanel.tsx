@@ -1,6 +1,7 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
+import { SearchAddon } from "@xterm/addon-search";
 import "@xterm/xterm/css/xterm.css";
 
 import { api, textToBytes } from "../services/ipc";
@@ -26,7 +27,11 @@ export default function TerminalPanel({
   const hostRef = useRef<HTMLDivElement>(null);
   const termRef = useRef<Terminal | null>(null);
   const fitRef = useRef<FitAddon | null>(null);
+  const searchRef = useRef<SearchAddon | null>(null);
   const lastDims = useRef({ cols: 0, rows: 0 });
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchText, setSearchText] = useState("");
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!hostRef.current) return;
@@ -56,16 +61,23 @@ export default function TerminalPanel({
       allowProposedApi: true,
     });
     const fit = new FitAddon();
+    const search = new SearchAddon();
     term.loadAddon(fit);
+    term.loadAddon(search);
     term.open(hostRef.current);
     term.attachCustomKeyEventHandler((ev) => {
-      // let the app handle copy/paste shortcuts; paste is delivered through onData
+      // Ctrl/Cmd+F opens the search bar; Cmd+C with selection copies
+      if ((ev.metaKey || ev.ctrlKey) && ev.key.toLowerCase() === "f" && ev.type === "keydown") {
+        setSearchOpen(true);
+        return false;
+      }
       if ((ev.metaKey || ev.ctrlKey) && ev.key === "c" && term.hasSelection()) return false;
       return true;
     });
 
     termRef.current = term;
     fitRef.current = fit;
+    searchRef.current = search;
 
     const disposer = registerWriter((data) => term.write(data));
 
@@ -77,7 +89,7 @@ export default function TerminalPanel({
 
     const dataSub = term.onData((data) => {
       api.ptyWrite(sessionId, channelId, textToBytes(data)).catch(() => {
-        term.write("\r\n\x1b[31m[connection lost]\x1b[0m\r\n");
+        term.write("\r\n\x1b[31m[连接已断开]\x1b[0m\r\n");
       });
     });
 
@@ -104,12 +116,31 @@ export default function TerminalPanel({
       ro.disconnect();
       hostRef.current?.removeEventListener("mousedown", focusOnClick);
       dataSub.dispose();
+      search.dispose();
       disposer();
       term.dispose();
       termRef.current = null;
+      searchRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId, channelId]);
+
+  // focus the search input whenever the bar opens
+  useEffect(() => {
+    if (searchOpen) searchInputRef.current?.focus();
+    else termRef.current?.focus();
+  }, [searchOpen]);
+
+  const doSearch = (dir: "next" | "prev") => {
+    if (!searchText || !searchRef.current) return;
+    if (dir === "next") searchRef.current.findNext(searchText, { caseSensitive: false });
+    else searchRef.current.findPrevious(searchText, { caseSensitive: false });
+  };
+
+  const closeSearch = () => {
+    searchRef.current?.clearDecorations();
+    setSearchOpen(false);
+  };
 
   // re-fit when this tab becomes visible again
   useEffect(() => {
@@ -132,6 +163,30 @@ export default function TerminalPanel({
       style={{ display: active ? "block" : "none" }}
       aria-hidden={!active}
     >
+      {searchOpen && (
+        <div className="term-search" onMouseDown={(e) => e.stopPropagation()}>
+          <input
+            ref={searchInputRef}
+            value={searchText}
+            placeholder="搜索终端内容…"
+            onChange={(e) => setSearchText(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") doSearch(e.shiftKey ? "prev" : "next");
+              if (e.key === "Escape") closeSearch();
+            }}
+            spellCheck={false}
+          />
+          <button className="btn btn-mini" title="上一个 (Shift+Enter)" onClick={() => doSearch("prev")}>
+            ↑
+          </button>
+          <button className="btn btn-mini" title="下一个 (Enter)" onClick={() => doSearch("next")}>
+            ↓
+          </button>
+          <button className="btn btn-mini" title="关闭 (Esc)" onClick={closeSearch}>
+            ✕
+          </button>
+        </div>
+      )}
       {closed && active && (
         <div className="term-closed-overlay">
           <div>

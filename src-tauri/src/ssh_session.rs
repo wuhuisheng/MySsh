@@ -200,7 +200,13 @@ pub async fn connect(params: &ConnectParams) -> Result<SshConnection> {
         reject_reason: reject_reason.clone(),
     };
 
-    let config = Arc::new(client::Config::default());
+    let config = Arc::new(client::Config {
+        // detect dead connections (NAT timeouts, cable pulls) instead of
+        // hanging forever: probe every 30s, give up after 3 unanswered
+        keepalive_interval: Some(Duration::from_secs(30)),
+        keepalive_max: 3,
+        ..Default::default()
+    });
     let connect_fut = client::connect(config, (params.host.as_str(), params.port), handler);
 
     let mut handle = match tokio::time::timeout(Duration::from_secs(20), connect_fut).await {
