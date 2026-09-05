@@ -2,7 +2,7 @@
 name = "myssh"
 version = "0.1.0"
 description = "MySsh - SSH/SFTP desktop client built with Tauri + russh + xterm.js"
-authors = ["SShDesk"]
+authors = ["MySsh"]
 edition = "2021"
 
 [build-dependencies]
@@ -29,3 +29,11 @@ dirs = "5"
 [features]
 # this feature is used for production builds or when a dev server is not specified, DO NOT REMOVE!!
 custom-protocol = ["tauri/custom-protocol"]
+
+[profile.release]
+# size-oriented release build: typically 35-45% smaller than defaults
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import Editor, { type OnMount } from "@monaco-editor/react";
+import LazyMonacoEditor from "./LazyMonacoEditor";
+import type { OnMount } from "@monaco-editor/react";
 import type * as Monaco from "monaco-editor";
 import { api } from "../services/ipc";
 import type { EditableFile } from "../types";
@@ -103,7 +104,7 @@ export default function FileEditorModal({ sessionId, path, onClose, onSaved, onT
           {error && <div className="sftp-error">{error}</div>}
           {!error && !file && <div className="sftp-status">加载中…</div>}
           {file && (
-            <Editor
+            <LazyMonacoEditor
               height="100%"
               language={file.language}
               value={content}

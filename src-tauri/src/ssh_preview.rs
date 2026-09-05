@@ -67,6 +67,18 @@ enum Kind {
 /// Cache of downloaded archives: remote path -> local temp path.
 static ARCHIVE_CACHE: Mutex<Option<HashMap<String, String>>> = Mutex::new(None);
 
+/// Deletes all cached archive temp files and empties the cache.
+pub fn clear_archive_cache() {
+    let mut guard = ARCHIVE_CACHE.lock().unwrap();
+    if let Some(m) = guard.as_mut() {
+        for local in m.values() {
+            let _ = std::fs::remove_file(local);
+        }
+        m.clear();
+    }
+    *guard = None;
+}
+
 fn classify(path: &str) -> Kind {
     let lower = path.to_lowercase();
     if lower.ends_with(".tar.gz") || lower.ends_with(".tgz") {

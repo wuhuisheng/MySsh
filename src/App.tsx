@@ -185,8 +185,12 @@ export default function App() {
     setActiveTab(ch);
   }, []);
 
+  const connectInFlight = useRef(false);
   const handleSessionSubmit = useCallback(
     async (submit: SessionSubmit) => {
+      // ignore double clicks on the card / form button while a connect runs
+      if (connectInFlight.current) return;
+      connectInFlight.current = true;
       setConnecting(true);
       setConnectError(null);
       try {
@@ -253,6 +257,7 @@ export default function App() {
         }
       } finally {
         setConnecting(false);
+        connectInFlight.current = false;
       }
     },
     [sessions, persistSessions, enterWorkspace, formOpen, pushToast],

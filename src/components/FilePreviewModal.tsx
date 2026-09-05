@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import Editor from "@monaco-editor/react";
+import LazyMonacoEditor from "./LazyMonacoEditor";
 import { api, formatBytes } from "../services/ipc";
 import type { ArchiveEntry, ArchiveEntryContent, PreviewResult } from "../types";
 
@@ -77,7 +77,7 @@ export default function FilePreviewModal({ sessionId, path, onClose, onToast }: 
               {result.truncated && (
                 <div className="notice">文件共 {formatBytes(result.size)}，仅显示前 1 MB</div>
               )}
-              <Editor
+              <LazyMonacoEditor
                 height="100%"
                 language={result.language}
                 value={result.content}
@@ -128,7 +128,7 @@ export default function FilePreviewModal({ sessionId, path, onClose, onToast }: 
                     {entryContent.truncated && (
                       <div className="notice">条目内容在 2 MB 处截断</div>
                     )}
-                    <Editor
+                    <LazyMonacoEditor
                       height="100%"
                       value={entryContent.content}
                       theme="vs-dark"

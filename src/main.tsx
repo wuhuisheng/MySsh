@@ -2,7 +2,9 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
 import "./styles.css";
-import "./monaco";
+
+// Monaco is NOT imported here: it is pulled in on demand (dynamic import)
+// by the preview/editor modals, keeping the startup bundle small.
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>

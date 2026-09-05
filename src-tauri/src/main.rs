@@ -103,6 +103,7 @@ async fn ssh_disconnect(state: State<'_, AppState>, session_id: String) -> Resul
     }
 
     conn.shutdown().await;
+    ssh_preview::clear_archive_cache();
     Ok(())
 }
 
