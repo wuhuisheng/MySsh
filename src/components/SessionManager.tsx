@@ -72,7 +72,7 @@ export default function SessionManager({
       <header className="home-header">
         <div className="home-logo">
           <img src="/app-icon.png" width={34} height={34} alt="" />
-          <span className="home-title">SShDesk</span>
+          <span className="home-title">MySsh</span>
         </div>
 
         {liveConn && (
