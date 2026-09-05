@@ -681,6 +681,12 @@ textarea {
   color: #b6bed4;
 }
 
+.home-empty-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 6px;
+}
+
 /* form modal variant */
 
 .modal-form {

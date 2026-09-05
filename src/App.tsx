@@ -286,6 +286,25 @@ export default function App() {
     [handleSessionSubmit],
   );
 
+  const openLocalWorkspace = useCallback(async () => {
+    setConnectError(null);
+    setFormOpen(false);
+    setEditing(null);
+    if (conn?.sessionId === "local") {
+      setView("workspace");
+      return;
+    }
+    const info: ConnectInfo = {
+      sessionId: "local",
+      home: "~",
+      host: "本机",
+      port: 0,
+      username: "local",
+      authMethod: "local",
+    };
+    await enterWorkspace(info);
+  }, [conn, enterWorkspace]);
+
   const handleDisconnect = async () => {
     if (!conn) return;
     const sid = conn.sessionId;
@@ -431,9 +450,11 @@ export default function App() {
             <div className="conn-chip">
               <span className="dot" />
               <div className="conn-text">
-                <strong>{conn?.host}</strong>
+                <strong>{conn?.sessionId === "local" ? "本地终端" : conn?.host}</strong>
                 <span>
-                  {conn?.username}@{conn?.host}:{conn?.port}
+                  {conn?.sessionId === "local"
+                    ? "本机 shell"
+                    : `${conn?.username}@${conn?.host}:${conn?.port}`}
                 </span>
               </div>
             </div>
@@ -449,7 +470,7 @@ export default function App() {
               ⇅ 传输 {activeCount ? `(${activeCount})` : ""}
             </button>
             <button className="btn btn-danger" onClick={handleDisconnect}>
-              断开连接
+              {conn?.sessionId === "local" ? "关闭本地终端" : "断开连接"}
             </button>
           </div>
         </header>
@@ -510,29 +531,33 @@ export default function App() {
             </div>
           </div>
 
-          <div className="sash" onMouseDown={startResize} />
+          {conn!.sessionId !== "local" && (
+            <>
+              <div className="sash" onMouseDown={startResize} />
 
-          <aside className="sftp-area" style={{ width: sftpWidth }}>
-            <SftpPanel
-              sessionId={conn!.sessionId}
-              home={conn!.home}
-              refreshNonce={sftpRefreshNonce}
-              onCwdChange={(cwd) => (sftpCwd.current = cwd)}
-              onPreview={setPreviewPath}
-              onEdit={setEditorPath}
-              onDownload={startDownload}
-              onUpload={pickAndUpload}
-              onToast={pushToast}
-            />
-            {transfersOpen && (
-              <TransferPanel
-                items={transfers}
-                onCancel={cancelTransfer}
-                onClear={() => setTransfers([])}
-                onClose={() => setTransfersOpen(false)}
-              />
-            )}
-          </aside>
+              <aside className="sftp-area" style={{ width: sftpWidth }}>
+                <SftpPanel
+                  sessionId={conn!.sessionId}
+                  home={conn!.home}
+                  refreshNonce={sftpRefreshNonce}
+                  onCwdChange={(cwd) => (sftpCwd.current = cwd)}
+                  onPreview={setPreviewPath}
+                  onEdit={setEditorPath}
+                  onDownload={startDownload}
+                  onUpload={pickAndUpload}
+                  onToast={pushToast}
+                />
+                {transfersOpen && (
+                  <TransferPanel
+                    items={transfers}
+                    onCancel={cancelTransfer}
+                    onClear={() => setTransfers([])}
+                    onClose={() => setTransfersOpen(false)}
+                  />
+                )}
+              </aside>
+            </>
+          )}
         </div>
 
         {previewPath && (
@@ -579,6 +604,7 @@ export default function App() {
           }}
           onDelete={(s) => persistSessions(sessions.filter((x) => x.id !== s.id))}
           onBackToWorkspace={() => setView("workspace")}
+          onLocalTerminal={openLocalWorkspace}
         />
       )}
 

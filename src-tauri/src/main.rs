@@ -2,6 +2,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod deploy_key;
+mod local_pty;
 mod ssh_edit;
 mod ssh_preview;
 mod ssh_session;
@@ -78,6 +79,10 @@ async fn ssh_connect(
 
 #[tauri::command]
 async fn ssh_disconnect(state: State<'_, AppState>, session_id: String) -> Result<(), String> {
+    if session_id == "local" {
+        local_pty::close_all(&state);
+        return Ok(());
+    }
     let conn = state
         .connections
         .lock()
@@ -115,6 +120,9 @@ async fn pty_open(
     cols: u32,
     rows: u32,
 ) -> Result<u32, String> {
+    if session_id == "local" {
+        return local_pty::open(&app, &state, cols, rows).map_err(err_str);
+    }
     let conn = get_conn(&state, &session_id)?;
     ssh_session::open_pty(&app, &conn, cols, rows)
         .await
@@ -128,6 +136,9 @@ async fn pty_write(
     channel_id: u32,
     data: Vec<u8>,
 ) -> Result<(), String> {
+    if session_id == "local" {
+        return local_pty::write(&state, channel_id, &data).map_err(err_str);
+    }
     let conn = get_conn(&state, &session_id)?;
     let tx = conn
         .pty_sender(channel_id)
@@ -144,6 +155,9 @@ async fn pty_resize(
     cols: u32,
     rows: u32,
 ) -> Result<(), String> {
+    if session_id == "local" {
+        return local_pty::resize(&state, channel_id, cols, rows).map_err(err_str);
+    }
     let conn = get_conn(&state, &session_id)?;
     if let Some(tx) = conn.pty_sender(channel_id) {
         let _ = tx.send(PtyCommand::Resize { cols, rows });
@@ -157,6 +171,10 @@ async fn pty_close(
     session_id: String,
     channel_id: u32,
 ) -> Result<(), String> {
+    if session_id == "local" {
+        local_pty::close(&state, channel_id);
+        return Ok(());
+    }
     let conn = get_conn(&state, &session_id)?;
     conn.close_pty(channel_id);
     Ok(())

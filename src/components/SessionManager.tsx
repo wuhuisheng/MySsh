@@ -9,6 +9,7 @@ interface Props {
   onEdit: (session: SavedSession) => void;
   onDelete: (session: SavedSession) => void;
   onBackToWorkspace: () => void;
+  onLocalTerminal: () => void;
 }
 
 function timeAgo(ms?: number): string {
@@ -42,6 +43,7 @@ export default function SessionManager({
   onEdit,
   onDelete,
   onBackToWorkspace,
+  onLocalTerminal,
 }: Props) {
   const [query, setQuery] = useState("");
   const [confirmId, setConfirmId] = useState<string | null>(null);
@@ -82,6 +84,9 @@ export default function SessionManager({
         )}
 
         <span className="spacer" />
+        <button className="btn" onClick={onLocalTerminal} title="打开本机 shell">
+          ⌨️ 本地终端
+        </button>
         <input
           className="home-search"
           placeholder="搜索会话…"
@@ -112,9 +117,14 @@ export default function SessionManager({
                 </li>
               ))}
             </ul>
-            <button className="btn btn-primary" onClick={onNew}>
-              ＋ 创建第一个会话
-            </button>
+            <div className="home-empty-actions">
+              <button className="btn btn-primary" onClick={onNew}>
+                ＋ 创建第一个会话
+              </button>
+              <button className="btn" onClick={onLocalTerminal}>
+                ⌨️ 打开本地终端
+              </button>
+            </div>
           </div>
         ) : (
           <div className="session-grid">

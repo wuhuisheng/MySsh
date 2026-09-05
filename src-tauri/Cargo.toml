@@ -25,6 +25,7 @@ tar = "0.4"
 flate2 = "1"
 chrono = "0.4"
 dirs = "5"
+portable-pty = "0.9"
 
 [features]
 # this feature is used for production builds or when a dev server is not specified, DO NOT REMOVE!!

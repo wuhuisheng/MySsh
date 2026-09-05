@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import { SearchAddon } from "@xterm/addon-search";
+import { WebglAddon } from "@xterm/addon-webgl";
 import "@xterm/xterm/css/xterm.css";
 
 import { api, textToBytes } from "../services/ipc";
@@ -28,6 +29,7 @@ export default function TerminalPanel({
   const termRef = useRef<Terminal | null>(null);
   const fitRef = useRef<FitAddon | null>(null);
   const searchRef = useRef<SearchAddon | null>(null);
+  const webglRef = useRef<WebglAddon | null>(null);
   const lastDims = useRef({ cols: 0, rows: 0 });
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchText, setSearchText] = useState("");
@@ -142,10 +144,42 @@ export default function TerminalPanel({
     setSearchOpen(false);
   };
 
+  // WebGL renderer: loaded only while the tab is visible (contexts are a
+  // limited browser resource); falls back to the canvas renderer on failure
+  const syncWebGL = (on: boolean) => {
+    const term = termRef.current;
+    if (!term) return;
+    if (on && !webglRef.current) {
+      try {
+        const w = new WebglAddon();
+        w.onContextLoss(() => {
+          try {
+            w.dispose();
+          } catch {
+            /* ignore */
+          }
+          if (webglRef.current === w) webglRef.current = null;
+        });
+        term.loadAddon(w);
+        webglRef.current = w;
+      } catch {
+        webglRef.current = null;
+      }
+    } else if (!on && webglRef.current) {
+      try {
+        webglRef.current.dispose();
+      } catch {
+        /* ignore */
+      }
+      webglRef.current = null;
+    }
+  };
+
   // re-fit when this tab becomes visible again
   useEffect(() => {
     if (active) {
       requestAnimationFrame(() => {
+        syncWebGL(true);
         try {
           fitRef.current?.fit();
         } catch {
@@ -153,6 +187,8 @@ export default function TerminalPanel({
         }
         termRef.current?.focus();
       });
+    } else {
+      syncWebGL(false);
     }
   }, [active]);
 
